@@ -1,4 +1,6 @@
-local filemanager = {}
+local filemanager = {
+    preview_winid = -1
+}
 
 -- ======================================================================
 -- UTILS
@@ -203,7 +205,27 @@ filemanager.keymaps = {
     },
 
     -- Rerender
-    { modes = "n", lhs = "<C-l>", rhs = function() filemanager.render() end }
+    { modes = "n", lhs = "<C-l>", rhs = function() filemanager.render() end },
+
+    { -- Open preview window for the file
+        modes = "n",
+        lhs = "p",
+        rhs = function()
+            local entry = filemanager.selected_entry()
+            if entry == nil or entry.is_dir then return end
+            if not vim.api.nvim_win_is_valid(filemanager.preview_winid) then
+                filemanager.preview_winid = vim.api.nvim_open_win(0, false, {
+                    split = "right",
+                    win = 0
+                })
+            end
+
+            local path = filemanager.dir_path_with(entry.name)
+            vim.api.nvim_win_call(filemanager.preview_winid, function()
+                vim.cmd.edit(path)
+            end)
+        end
+    }
 }
 
 function filemanager.setup(opts)
