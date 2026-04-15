@@ -209,7 +209,7 @@ filemanager.keymaps = {
 
     { -- Open preview window for the file
         modes = "n",
-        lhs = "p",
+        lhs = "o",
         rhs = function()
             local entry = filemanager.selected_entry()
             if entry == nil or entry.is_dir then return end
