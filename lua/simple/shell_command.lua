@@ -20,11 +20,13 @@ function sc.setup(opts)
     opts.shell_command.keymaps.run_last = opts.shell_command.keymaps.run_last or "<leader>l"
     opts.shell_command.keymaps.scroll_output_up = opts.shell_command.keymaps.scroll_output_up or "<C-k>"
     opts.shell_command.keymaps.scroll_output_down = opts.shell_command.keymaps.scroll_output_down or "<C-j>"
+    opts.shell_command.keymaps.fix_errors = opts.shell_command.keymaps.fix_errors or "<leader>e"
 
     vim.keymap.set("n", opts.shell_command.keymaps.input, sc.input)
     vim.keymap.set("n", opts.shell_command.keymaps.run_last, sc.run_last_or_input)
     vim.keymap.set("n", opts.shell_command.keymaps.scroll_output_up, sc.scroll_output_up)
     vim.keymap.set("n", opts.shell_command.keymaps.scroll_output_down, sc.scroll_output_down)
+    vim.keymap.set("n", opts.shell_command.keymaps.fix_errors, sc.fix_errors)
 
     if opts.telescope_integration then
         sc.telescope_opts = opts.shell_command.telescope_opts
@@ -54,6 +56,8 @@ function sc.open_output_win()
             win = 0,
         })
     end
+
+    vim.cmd.cclose()
 end
 
 function sc.run(user_input, cwd)
@@ -99,6 +103,29 @@ function sc.run(user_input, cwd)
     vim.api.nvim_buf_call(sc.output_bufnr, function()
         vim.cmd.normal("G")
     end)
+end
+
+function sc.fix_errors()
+  if vim.api.nvim_buf_is_loaded(sc.output_bufnr) then
+    local results = vim.fn.getqflist({ title = "Errors", lines = vim.api.nvim_buf_get_lines(sc.output_bufnr, 0, -1, 1) })
+
+    local entries = {}
+    for _, result in ipairs(results.items) do
+      if result.valid == 1 then
+        table.insert(entries, result)
+      end
+    end
+
+    if #entries > 0 then
+      vim.fn.setqflist(entries, 'r');
+      if vim.api.nvim_win_is_valid(sc.output_winid) then
+        vim.api.nvim_win_close(sc.output_winid, false)
+      end
+
+      vim.cmd.copen(20)
+      vim.cmd.cfirst()
+    end
+  end
 end
 
 -- Completion function
